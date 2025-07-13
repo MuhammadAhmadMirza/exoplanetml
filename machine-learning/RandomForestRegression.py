@@ -121,7 +121,6 @@ if uploaded_file or example_data:
         test_r2 = r2_score(y_test, y_test_pred)
 
         rf_results = pd.DataFrame({
-            'Method': ['Random forest'],
             'Training MSE': [train_mse],
             'Training R2': [train_r2],
             'Test MSE': [test_mse],
