@@ -78,14 +78,19 @@ with st.sidebar:
 # Model building process
 if uploaded_file or example_data: 
     with st.status("Running ...", expanded=True) as status:
-    
+
+        # List of features to ignore during training
+        features_to_ignore = [] # <-- HERE IS THE LIST
+
         st.write("Loading data ...")
         time.sleep(sleep_time)
 
         st.write("Preparing data ...")
         time.sleep(sleep_time)
-        X = df.iloc[:,:-1]
-        y = df.iloc[:,-1]
+
+        target_column = df.columns[-1]
+        X = df.drop(columns=features_to_ignore + [target_column])
+        y = df[target_column]
             
         st.write("Splitting data ...")
         time.sleep(sleep_time)
