@@ -1,119 +1,58 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
 
-# Optional: use dark theme
-plt.style.use('seaborn-v0_8-darkgrid')
-sns.set_palette("viridis")
+# Read the .tbl file (assuming tab-separated, adjust delimiter if needed)
+# Replace 'input.tbl' with the path to your .tbl file
+data = pd.read_table('./AstroImaging/Raw Data.tbl', delim_whitespace=True)
 
-# Load the file (fixing the warning and avoiding header mismatch)
-df = pd.read_csv('AstroImaging/Raw Data.tbl', sep='\s+', header=None)
+# Extract relevant columns (assuming column names or indices match the provided data)
+obs = data.iloc[:, 0].values  # First column (OBS)
+flux = data.iloc[:, 14].values  # FLUX (based on provided data column index)
+flux_err = data.iloc[:, 34].values  # FLUX_ERR
+mag = data.iloc[:, 18].values  # MAG
+mag_err = data.iloc[:, 22].values  # MAG_ERR
 
-# Rename only the relevant columns based on column indices
-df = df.rename(columns={
-    0: 'Filename',
-    3: 'Time_BJD',
-    4: 'Time_JD',
-    11: 'AIRMASS',
-    13: 'MAG_AUTO',
-    14: 'MAGERR_AUTO',
-    15: 'EXPTIME',
-    16: 'FWHM',
-    17: 'FLUX_AUTO',
-    18: 'FLUXERR_AUTO',
-    19: 'BACKGROUND'
-})
+# Create a figure with subplots
+plt.figure(figsize=(12, 10))
 
-# Remove rows with any missing values in relevant columns
-df_clean = df.dropna(subset=['Time_BJD', 'MAG_AUTO', 'FLUX_AUTO'])
+# Plot FLUX
+plt.subplot(2, 2, 1)
+plt.errorbar(obs, flux, yerr=flux_err, fmt='o-', color='blue', ecolor='red', capsize=3)
+plt.xlabel('Observation Number')
+plt.ylabel('FLUX')
+plt.title('FLUX vs Observation')
+plt.grid(True)
 
-# ---- Plot 1: Light Curve ----
-plt.figure(figsize=(10, 5))
-plt.scatter(df_clean['Time_BJD'], df_clean['MAG_AUTO'], s=10, alpha=0.7)
-plt.gca().invert_yaxis()  # Astronomical magnitudes are inverted
-plt.title("Light Curve (Magnitude vs Time)")
-plt.xlabel("Time (BJD)")
-plt.ylabel("Magnitude")
+# Plot FLUX_ERR
+plt.subplot(2, 2, 2)
+plt.plot(obs, flux_err, 'o-', color='green')
+plt.xlabel('Observation Number')
+plt.ylabel('FLUX_ERR')
+plt.title('FLUX_ERR vs Observation')
+plt.grid(True)
+
+# Plot MAG
+plt.subplot(2, 2, 3)
+plt.errorbar(obs, mag, yerr=mag_err, fmt='o-', color='purple', ecolor='orange', capsize=3)
+plt.xlabel('Observation Number')
+plt.ylabel('MAG')
+plt.title('MAG vs Observation')
+plt.grid(True)
+
+# Plot MAG_ERR
+plt.subplot(2, 2, 4)
+plt.plot(obs, mag_err, 'o-', color='cyan')
+plt.xlabel('Observation Number')
+plt.ylabel('MAG_ERR')
+plt.title('MAG_ERR vs Observation')
+plt.grid(True)
+
+# Adjust layout to prevent overlap
 plt.tight_layout()
-plt.savefig("plot1_light_curve.png")
-plt.close()
 
-# ---- Plot 2: Flux vs Time ----
-plt.figure(figsize=(10, 5))
-plt.plot(df_clean['Time_BJD'], df_clean['FLUX_AUTO'], lw=0.7)
-plt.title("Flux over Time")
-plt.xlabel("Time (BJD)")
-plt.ylabel("Flux")
-plt.tight_layout()
-plt.savefig("plot2_flux_time.png")
-plt.close()
+# Save the plot as a PNG file (downloads to the current working directory)
+plt.savefig('plot_output.png', dpi=300, bbox_inches='tight')
 
-# ---- Plot 3: Flux vs Magnitude ----
-sns.jointplot(data=df_clean, x='MAG_AUTO', y='FLUX_AUTO', kind='hex', height=6)
-plt.suptitle("Flux vs Magnitude", y=1.02)
-plt.savefig("plot3_flux_vs_mag.png")
-plt.close()
-
-# ---- Plot 4: Airmass vs Magnitude ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='AIRMASS', y='MAG_AUTO')
-plt.gca().invert_yaxis()
-plt.title("Airmass vs Magnitude")
-plt.tight_layout()
-plt.savefig("plot4_airmass_mag.png")
-plt.close()
-
-# ---- Plot 5: Histogram of Exposure Times ----
-plt.figure(figsize=(7, 4))
-sns.histplot(df_clean['EXPTIME'], bins=20, kde=True)
-plt.title("Exposure Time Distribution")
-plt.xlabel("Exposure Time (s)")
-plt.tight_layout()
-plt.savefig("plot5_exptime_hist.png")
-plt.close()
-
-# ---- Plot 6: FWHM vs Magnitude ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='FWHM', y='MAG_AUTO')
-plt.gca().invert_yaxis()
-plt.title("FWHM vs Magnitude (Seeing Conditions)")
-plt.tight_layout()
-plt.savefig("plot6_fwhm_mag.png")
-plt.close()
-
-# ---- Plot 7: Error in Flux vs Flux ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='FLUX_AUTO', y='FLUXERR_AUTO', alpha=0.5)
-plt.title("Flux Error vs Flux")
-plt.xlabel("Flux")
-plt.ylabel("Flux Error")
-plt.tight_layout()
-plt.savefig("plot7_fluxerr_flux.png")
-plt.close()
-
-# ---- Plot 8: Background vs Flux ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='BACKGROUND', y='FLUX_AUTO')
-plt.title("Background Brightness vs Flux")
-plt.tight_layout()
-plt.savefig("plot8_background_flux.png")
-plt.close()
-
-# ---- Plot 9: Magnitude Error Distribution ----
-plt.figure(figsize=(7, 4))
-sns.histplot(df_clean['MAGERR_AUTO'], bins=30, kde=True)
-plt.title("Magnitude Error Distribution")
-plt.tight_layout()
-plt.savefig("plot9_magerr_hist.png")
-plt.close()
-
-# ---- Plot 10: Correlation Heatmap ----
-plt.figure(figsize=(10, 6))
-corr = df_clean[['MAG_AUTO', 'MAGERR_AUTO', 'FLUX_AUTO', 'FLUXERR_AUTO', 'AIRMASS', 'FWHM', 'EXPTIME', 'BACKGROUND']].corr()
-sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
-plt.title("Feature Correlation Heatmap")
-plt.tight_layout()
-plt.savefig("plot10_correlation_heatmap.png")
-plt.close()
-
-print("All 10 plots have been saved as PNG files.")
+# Display the plot (optional, for environments that support it)
+plt.show()
