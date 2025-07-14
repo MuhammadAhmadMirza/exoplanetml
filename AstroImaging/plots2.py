@@ -1,123 +1,55 @@
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+from astropy.timeseries import TimeSeries
 
-# Optional: use dark theme
-plt.style.use('seaborn-v0_8-darkgrid')
-sns.set_palette("viridis")
+# Simulate a sample light curve for an eclipsing binary
+np.random.seed(42)
+period = 2.0  # days
+time = np.linspace(0, 10, 500)
+flux = 1 - 0.2 * np.exp(-((time % period - period/2)**2)/(2*0.05**2))  # synthetic eclipse
+flux += np.random.normal(0, 0.01, size=flux.shape)  # add noise
 
-# Load the file using the actual format
-df = pd.read_csv("./AstroImaging/Raw Data.tbl", delim_whitespace=True, header=None, dtype=str)
+# Create an Astropy TimeSeries
+ts = TimeSeries(time=time, data={'flux': flux})
 
-# Rename only the relevant columns based on column indices
-df = df.rename(columns={
-    0: 'Filename',
-    3: 'Time_BJD',
-    4: 'Time_JD',
-    11: 'AIRMASS',
-    13: 'MAG_AUTO',
-    14: 'MAGERR_AUTO',
-    15: 'EXPTIME',
-    16: 'FWHM',
-    17: 'FLUX_AUTO',
-    18: 'FLUXERR_AUTO',
-    19: 'BACKGROUND'
-})
+# 1. Basic Light Curve Plot
+def plot_light_curve(ts):
+    plt.figure(figsize=(8, 4))
+    plt.scatter(ts.time.value, ts['flux'], s=5, color='black')
+    plt.xlabel("Time [days]")
+    plt.ylabel("Flux")
+    plt.title("Light Curve")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
-# Convert relevant columns to numeric, coercing errors to NaN
-numeric_cols = ['Time_BJD', 'MAG_AUTO', 'MAGERR_AUTO', 'FLUX_AUTO', 'FLUXERR_AUTO', 'AIRMASS', 'FWHM', 'EXPTIME', 'BACKGROUND']
-df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+# 2. Phase-Folded Light Curve
+def plot_phase_folded(ts, period):
+    phase = (ts.time.value % period) / period
+    plt.figure(figsize=(8, 4))
+    plt.scatter(phase, ts['flux'], s=5, color='blue')
+    plt.xlabel("Orbital Phase")
+    plt.ylabel("Flux")
+    plt.title("Phase-Folded Light Curve")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
-# Drop rows with any missing values in relevant columns
-df_clean = df.dropna(subset=numeric_cols)
+# 3. Residual Plot
+def plot_residuals(ts):
+    model_flux = np.ones_like(ts['flux'])  # flat model for residual comparison
+    residuals = ts['flux'] - model_flux
+    plt.figure(figsize=(8, 4))
+    plt.scatter(ts.time.value, residuals, s=5, color='red')
+    plt.axhline(0, linestyle='--', color='gray')
+    plt.xlabel("Time [days]")
+    plt.ylabel("Residuals (Flux - Model)")
+    plt.title("Residuals Plot")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
-# ---- Plot 1: Light Curve ----
-plt.figure(figsize=(10, 5))
-plt.scatter(df_clean['Time_BJD'], df_clean['MAG_AUTO'], s=10, alpha=0.7)
-plt.gca().invert_yaxis()
-plt.title("Light Curve (Magnitude vs Time)")
-plt.xlabel("Time (BJD)")
-plt.ylabel("Magnitude")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot1_light_curve.png")
-plt.close()
-
-# ---- Plot 2: Flux vs Time ----
-plt.figure(figsize=(10, 5))
-plt.plot(df_clean['Time_BJD'], df_clean['FLUX_AUTO'], lw=0.7)
-plt.title("Flux over Time")
-plt.xlabel("Time (BJD)")
-plt.ylabel("Flux")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot2_flux_time.png")
-plt.close()
-
-# ---- Plot 3: Flux vs Magnitude ----
-sns.jointplot(data=df_clean, x='MAG_AUTO', y='FLUX_AUTO', kind='hex', height=6)
-plt.suptitle("Flux vs Magnitude", y=1.02)
-plt.savefig("./AstroImaging/plot3_flux_vs_mag.png")
-plt.close()
-
-# ---- Plot 4: Airmass vs Magnitude ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='AIRMASS', y='MAG_AUTO')
-plt.gca().invert_yaxis()
-plt.title("Airmass vs Magnitude")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot4_airmass_mag.png")
-plt.close()
-
-# ---- Plot 5: Histogram of Exposure Times ----
-plt.figure(figsize=(7, 4))
-sns.histplot(df_clean['EXPTIME'], bins=20, kde=True)
-plt.title("Exposure Time Distribution")
-plt.xlabel("Exposure Time (s)")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot5_exptime_hist.png")
-plt.close()
-
-# ---- Plot 6: FWHM vs Magnitude ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='FWHM', y='MAG_AUTO')
-plt.gca().invert_yaxis()
-plt.title("FWHM vs Magnitude (Seeing Conditions)")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot6_fwhm_mag.png")
-plt.close()
-
-# ---- Plot 7: Error in Flux vs Flux ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='FLUX_AUTO', y='FLUXERR_AUTO', alpha=0.5)
-plt.title("Flux Error vs Flux")
-plt.xlabel("Flux")
-plt.ylabel("Flux Error")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot7_fluxerr_flux.png")
-plt.close()
-
-# ---- Plot 8: Background vs Flux ----
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_clean, x='BACKGROUND', y='FLUX_AUTO')
-plt.title("Background Brightness vs Flux")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot8_background_flux.png")
-plt.close()
-
-# ---- Plot 9: Magnitude Error Distribution ----
-plt.figure(figsize=(7, 4))
-sns.histplot(df_clean['MAGERR_AUTO'], bins=30, kde=True)
-plt.title("Magnitude Error Distribution")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot9_magerr_hist.png")
-plt.close()
-
-# ---- Plot 10: Correlation Heatmap ----
-plt.figure(figsize=(10, 6))
-corr = df_clean[numeric_cols].corr()
-sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
-plt.title("Feature Correlation Heatmap")
-plt.tight_layout()
-plt.savefig("./AstroImaging/plot10_correlation_heatmap.png")
-plt.close()
-
-print("All 10 plots have been saved as PNG files.")
+# Call the functions
+plot_light_curve(ts)
+plot_phase_folded(ts, period)
+plot_residuals(ts)

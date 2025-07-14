@@ -4,7 +4,7 @@ import numpy as np
 
 # Read the .tbl file (assuming tab-separated, adjust delimiter if needed)
 # Replace 'input.tbl' with the path to your .tbl file
-data = pd.read_table('./AstroImaging/Raw Data.tbl', delim_whitespace=True)
+data = pd.read_table('./AstroImaging/Table.tbl', delim_whitespace=True)
 
 # Extract relevant columns (assuming column names or indices match the provided data)
 obs = data.iloc[:, 0].values  # First column (OBS)
