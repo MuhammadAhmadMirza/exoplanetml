@@ -8,6 +8,8 @@
         "ncols",
         "nrows",
         "steelblue",
+        "stemx",
+        "streamlit",
         "suptitle"
     ]
 }
